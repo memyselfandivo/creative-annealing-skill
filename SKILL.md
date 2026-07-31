@@ -1,135 +1,110 @@
 ---
 name: creative-annealing
-description: Generiert kreative Ideen zu einem Thema/Problem über einen strukturierten "Simulated Annealing"-Prozess — breite, unbewertete Exploration zuerst, dann mehrere Eliminationsrunden bis auf genau 3 finale Ideen, mit nachvollziehbarer Begründung in jeder Runde. Nutze diesen Skill IMMER, wenn der User "creative-annealing" erwähnt oder explizit sagt — egal ob mit oder ohne weitere Details (Thema, Startanzahl). Auch bei nur teilweisen Angaben (nur Thema, nur Anzahl, oder gar nichts außer dem Trigger-Wort) triggert dieser Skill — er übernimmt die fehlenden Angaben selbst über gezielte Rückfragen. Nicht triggern bei allgemeinen Kreativitäts- oder Brainstorming-Anfragen ohne den expliziten Trigger-Begriff.
+description: Runs a structured, simulated-annealing-style ideation process — wide divergent exploration (including ideas that deliberately work against the stated goal) followed by staged elimination rounds down to exactly 3 final ideas, each round's survivors justified. Trigger ALWAYS when the user says "creative-annealing", with or without further detail (topic, starting count). Partial or missing info (topic only, count only, or just the bare trigger word) still triggers this skill — resolve missing pieces via the intake questions below. Do NOT trigger for generic creativity/brainstorming requests that don't use this specific trigger term.
 ---
 
 # Creative Annealing
 
-Ein mehrstufiger Ideenfindungsprozess nach dem Vorbild von Simulated Annealing: viele unkonventionelle Ideen generieren (hohe "Temperatur"), dann schrittweise selektieren und verfeinern (Abkühlung), bis am Ende genau 3 belastbare Ideen übrig bleiben. Der Wert liegt nicht nur im Ergebnis, sondern in der Nachvollziehbarkeit — der User soll im Nachhinein sehen können, welcher Ansatz aus der Exploration wo rausgeflogen ist und warum, um ggf. Ansätze händisch zu kombinieren.
+A multi-round ideation process modeled on simulated annealing: generate ideas at "high temperature" (wide, unfiltered, including ideas that run counter to the goal), then "cool" through elimination rounds that transform rather than just filter, converging on exactly 3 ideas. Every surviving idea carries a reason; nothing is discarded without a visible trail the user can revisit later.
 
-Die zentrale Charakteristik des Originalverfahrens ist dabei nicht "viele kreative Ideen", sondern dass die Exploration bewusst auch **gegen die Intuition** und **quer zum Ziel** sucht, nicht nur variantenreich in Richtung Ziel. Erst durch diesen bewussten Umweg entstehen in den Folgerunden Ideen, die auf einem unerwarteten Pfad zum Ziel führen. Schritt 2 bildet das über vier Suchrichtungen ab, nicht nur eine.
+## 1. Trigger handling
 
-## Trigger-Erkennung
+On seeing "creative-annealing":
 
-Sobald der Trigger "creative-annealing" im Prompt vorkommt, unterscheide zwei Varianten:
+- **Full form** (trigger + topic + starting count all present): skip intake questions, go straight to Step 2 (clarification).
+- **Bare trigger** (topic and/or count missing): ask only for what's missing, one question at a time:
+  1. "What idea or problem is this about?"
+  2. "How many ideas should the exploration round start with?" — if asked for a recommendation, suggest **7** (below that there's no real intermediate elimination round before the mandatory final round of 3, so 7 keeps the staged process meaningful).
 
-**Variante A — vollständige Angabe.** Der Prompt enthält zusätzlich zum Trigger sowohl (1) eine Beschreibung der Idee/des Themas als auch (2) eine Startanzahl an Ideen für die Explorationsrunde.
-→ Intake-Fragen überspringen, direkt weiter mit Schritt 1 (Klärung).
+## 2. Clarification
 
-**Variante B — nackter Trigger.** Der Prompt enthält nur den Trigger, ohne Beschreibung und/oder ohne Startanzahl.
-→ Fehlende Angaben einzeln nacheinander erfragen (nicht beide Fragen in einer Nachricht bündeln):
-1. "Um welche Idee/welches Problem geht es?"
-2. "Mit wie vielen Ideen soll die Explorationsrunde starten?"
+Before exploring, briefly clarify only what's genuinely unclear:
+- The concrete problem/topic
+- Relevant constraints, target audience, context of use
 
-Bei der zweiten Frage, falls der User unsicher ist oder nach einer Empfehlung fragt: empfiehl **7** als sinnvolles Minimum (Begründung siehe unten). Danach weiter mit Schritt 1.
+Also determine (silently — not necessarily by asking the user):
+- **Goal direction**: the obvious, conventional direction a solution would take
+- **Opposite direction**: its plausible opposite
 
-Ist nur eine der beiden Angaben vorhanden (z. B. Thema ja, Anzahl nein), nur die fehlende einzeln nachfragen.
+Not every goal has a clean opposite — for abstract goals it may feel somewhat constructed. Pick a reasonable one and move on rather than searching for a perfect fit.
 
-## Warum 7 das empfohlene Minimum ist
+## 3. Exploration round (high temperature)
 
-Reduktionsregel (siehe Schritt 3): mindestens 2 Ideen weniger pro Runde. Bei einer Startanzahl von 5 oder 6 springt die erste Reduktionsrunde bereits direkt auf 3 — es gibt keine echte Zwischenrunde, nur Exploration + Finalrunde. Das funktioniert technisch, unterläuft aber den Sinn des mehrstufigen Abkühlens. Ab 7 Start-Ideen ist mindestens eine echte Zwischenrunde garantiert. Größere Startanzahlen (10, 15, 20...) erzeugen entsprechend mehr Zwischenrunden und mehr Explorationsbreite — sinnvoll bei komplexeren oder unklareren Problemen.
+Generate exactly N ideas (N = starting count). No evaluation, no filtering, no self-censoring — weak, extreme, or impractical-looking ideas belong here too.
 
-## Schritt 1: Klärung
+Spread the N ideas across three directions relative to the goal (~25/50/25, approximate — doesn't need to divide evenly):
 
-Bevor die Explorationsrunde beginnt, kurz klären, was für die Ideenfindung relevant ist — aber nur was wirklich unklar ist, nicht pauschal alles abfragen:
-- Um welches Problem/Thema geht es konkret?
-- Gibt es Rahmenbedingungen, Zielgruppe, Constraints, einen Einsatzkontext?
+- **Counter-direction (~25%)**: ideas that explicitly work AGAINST the goal or pursue its opposite. Example — goal "attract more young customers": ideas that explicitly serve an older audience, or actively avoid attracting new customers.
+- **Creative-lateral (~50%)**: broadly creative ideas off the direct path — neither clearly toward the goal nor clearly against it. Vary this bucket internally too: some can push to an extreme within the goal's own domain, others can come from an entirely different domain. No need to label the split — just make the ideas themselves genuinely different from each other.
+- **Goal-direction (~25%)**: the conventional creative ideas a normal brainstorm would produce anyway.
 
-Zusätzlich für Schritt 2 selbst festlegen (in der Regel keine Rückfrage an den User nötig, nur bei echter Unklarheit):
-- **Zielrichtung**: was ist die naheliegende, "übliche" Richtung, in die eine Lösung zielt?
-- **Gegenrichtung**: was wäre das plausible Gegenteil dieser Zielrichtung?
+This distribution IS the point of the exploration round. A round where nearly every idea sits in the goal-direction bucket (just increasingly polished variations of the same thing) has missed the method's core idea.
 
-Nicht jedes Ziel hat eine sauber definierbare Gegenrichtung — bei abstrakteren Zielen wirkt sie zwangsläufig etwas konstruiert. Das ist eine bewusst in Kauf genommene Eigenschaft dieses Verfahrens, kein Fehler, der behoben werden muss. Im Zweifel eine plausible, nachvollziehbare Gegenrichtung wählen und weitermachen, statt lange danach zu suchen.
+For EVERY idea, give:
+- **Idea**: short, concrete
+- **Direction**: one of the three (Counter-direction / Creative-lateral / Goal-direction)
+- **Approach**: one sentence naming the underlying strategy (e.g. "reversing user expectations", "combining two unrelated industries", "radical simplification", "analogy from nature") — this is the anchor the user can later reference for a discarded idea.
 
-Wenn die ursprüngliche Beschreibung das schon abdeckt, diesen Schritt kurz halten oder überspringen.
+## 4. Round plan
 
-## Schritt 2: Explorationsrunde (hohe Temperatur)
+Compute the full round plan once, right after exploration, and show it (e.g. "Round plan: 10 → 7 → 4 → 3") before the first elimination round.
 
-Generiere genau N Ideen (N = Startanzahl). Keine Bewertung, keine Vorauswahl, keine Selbstzensur — auch schwache, extreme oder auf den ersten Blick unpraktische Ideen gehören rein.
-
-Verteile die N Ideen bewusst auf **drei Suchrichtungen** relativ zur Zielrichtung, statt sie alle nur variantenreich Richtung Ziel zu denken:
-
-- **Gegenrichtung (~25%)**: Ideen, die explizit GEGEN das Ziel arbeiten oder dessen Gegenteil verfolgen (siehe Zielrichtung/Gegenrichtung aus Schritt 1). Beispiel Ziel "mehr junge Kunden gewinnen": Ideen, die explizit ältere Zielgruppen bedienen oder aktiv keine neuen Kunden anziehen.
-- **Kreativ-quer (~50%)**: breit gestreute, sehr kreative Ideen abseits des direkten Zielpfads — weder klar Richtung Ziel noch klar dagegen. Intern selbst auf Streuung achten: ein Teil davon darf im selben Themenfeld wie das Ziel extrem/radikal sein, ein anderer Teil ruhig aus einem komplett anderen Themenfeld kommen. Diese Streuung muss nicht als eigene Unterkategorie ausgewiesen werden, nur die Ideen selbst sollen sich spürbar unterscheiden.
-- **Zielrichtung (~25%)**: übliche kreative Ideen, die erkennbar auf das Ziel hinarbeiten. Das ist die einzige Richtung, die ein klassisches Brainstorming ohnehin abdecken würde.
-
-Prozentsätze sind Richtwerte, müssen bei N nicht exakt aufgehen. Diese Verteilung ist der eigentliche Zweck der Explorationsrunde. Eine Runde, in der praktisch alle Ideen aus der Zielrichtung stammen (nur zunehmend kreativer variiert), hat die Kernidee des Verfahrens verfehlt — genau das ist der Fehler, der vermieden werden soll.
-
-Für JEDE Idee dieser Runde angeben:
-- **Idee**: kurz und prägnant
-- **Richtung**: eine der drei Suchrichtungen (Gegenrichtung / Kreativ-quer / Zielrichtung)
-- **Ansatz**: 1 Satz zur grundsätzlichen Denkrichtung/Strategie dahinter (z. B. "Umkehrung der Nutzererwartung", "Kombination zweier fremder Branchen", "radikale Vereinfachung", "Analogie aus der Natur"). Das ist der Anker, an dem der User später einen verworfenen Ansatz wiedererkennen kann.
-
-## Schritt 3: Rundenplan berechnen
-
-Berechne den kompletten Rundenplan EINMAL nach der Explorationsrunde und zeige ihn dem User kurz und transparent (z. B. als eine Zeile: "Rundenplan: 12 → 8 → 5 → 3"), bevor die erste Zwischenrunde beginnt.
-
-Formel:
 ```
-R (Reduktion pro Runde) = clamp( round(0.30 × N), 2, floor(0.50 × N) )
+R (reduction per round) = clamp( round(0.30 × N), 2, floor(0.50 × N) )
 ```
-- N = Startanzahl (aus Schritt 2, bleibt für die ganze Formel fix)
-- Untergrenze: mindestens 2 Ideen weniger pro Runde
-- Obergrenze: nie mehr als 50% der Start-Ideen (bezogen auf N, nicht auf die aktuell verbleibende Anzahl)
-- Optimalwert: 30% von N, gerundet
+- N = starting count, fixed for the whole run
+- Minimum: 2 fewer per round
+- Maximum: 50% of N
+- Target: 30% of N, rounded
 
-Ablauf:
 ```
 remaining = N
-solange remaining > 3:
+while remaining > 3:
     next = remaining - R
-    wenn next <= 3: next = 3   // Finalrunde erzwingt IMMER genau 3,
-                                 // unabhängig davon, was R ergäbe
+    if next <= 3: next = 3   # final round always lands exactly on 3
     remaining = next
 ```
 
-Die Finalrunde ist also ein Sonderfall: sie landet immer exakt bei 3, auch wenn die reguläre Reduktion R eigentlich weniger oder mehr Abzug bedeuten würde.
+Examples: N=7 → 7→5→3. N=10 → 10→7→4→3. N=20 → 20→14→8→3.
 
-Beispiele zur Orientierung:
-- N=7: R=2 → 7 → 5 → 3 (1 Zwischenrunde + Finalrunde)
-- N=10: R=3 → 10 → 7 → 4 → 3 (2 Zwischenrunden + Finalrunde)
-- N=20: R=6 → 20 → 14 → 8 → 3 (2 Zwischenrunden + Finalrunde, letzter Sprung größer als R, das ist gewollt)
+## 5. Elimination rounds (cooling)
 
-## Schritt 4: Zwischenrunden (Abkühlung)
+Not pure filtering — especially for Counter-direction and Creative-lateral ideas. Actively rework/bend surviving ideas toward the goal rather than discarding anything that isn't already close. This is where the actual creative payoff happens: an idea that deliberately ran against the goal in exploration gets transformed over 1-2 rounds until it contributes to the goal via an unexpected path.
 
-Diese Runden sind KEINE reinen Filterrunden — das gilt besonders für Ideen aus Gegenrichtung und Kreativ-quer. Statt sie einfach zu verwerfen, sollen sie aktiv weiterentwickelt/gedreht werden, sodass sie sich schrittweise dem Ziel annähern. Der eigentliche kreative Ertrag entsteht genau hier: eine Idee, die in der Exploration bewusst gegen das Ziel lief, wird über 1-2 Zwischenrunden so transformiert, dass sie am Ende auf einem unerwarteten Weg zum Ziel beiträgt — nicht trotz, sondern wegen ihres ungewöhnlichen Ausgangspunkts.
+Example: a counter-direction idea ("deliberately design the shop for older, traditional readers") can be turned, next round, into a goal-serving one ("dusty-traditional becomes a quirky, cozy countryside aesthetic that's a cult favorite among young people") — instead of being cut just because it doesn't look goal-aligned at first glance.
 
-Beispiel: eine Gegenrichtungs-Idee ("Laden bewusst für ältere, traditionelle Buchleser gestalten") kann in der nächsten Runde zu einer zieldienlichen Idee gedreht werden ("aus verstaubt-traditionell wird eine quirky, cozy Countryside-Ästhetik, die gerade bei jungen Leuten als kultig gilt") — statt einfach gestrichen zu werden, weil sie auf den ersten Blick nicht zum Ziel passt.
+Select the number of survivors set by the round plan. Ideas may be refined, bent, or merged into a new idea.
 
-Aus den Ideen der Vorrunde die gemäß Rundenplan verbleibende Anzahl auswählen. Ideen dürfen dabei weiterentwickelt, gedreht oder zu einer neuen Idee verschmolzen werden.
+For EVERY surviving idea, give:
+- **Idea**: current state (may be refined/transformed from the previous round)
+- **Direction**: keep the ORIGINAL direction from Step 3, even once the idea sits closer to the goal — this preserves visibility into where each surviving idea came from
+- **Reasoning**: why it survived this round, relative to what got cut — if transformed, briefly explain how it moved toward the goal
 
-Für JEDE überlebende Idee angeben:
-- **Idee**: aktueller Stand (kann gegenüber der Vorrunde verfeinert, gedreht oder verändert sein)
-- **Richtung**: ursprüngliche Richtung aus Schritt 2 beibehalten, auch wenn die Idee inzwischen näher am Ziel liegt — so bleibt sichtbar, aus welcher Ecke der Exploration eine Idee stammt
-- **Begründung**: warum sie diese Runde überlebt hat, im Vergleich zu den in dieser Runde ausgeschiedenen Ideen — bei einer Drehung/Transformation kurz erklären, wie sie sich dem Ziel angenähert hat
+Don't list eliminated ideas explicitly — they're already visible in the previous round. The user can reference an earlier round anytime ("what happened to approach X", "combine X with Y").
 
-Nicht explizit auflisten, welche Ideen ausgeschieden sind — die stehen bereits in der Vorrunde und bleiben dort nachlesbar. Der User kann jederzeit auf eine frühere Runde zurückgreifen und fragen "was ist mit Ansatz X passiert" oder "kombiniere X mit Y".
+## 6. Final round
 
-## Schritt 5: Finalrunde
+Exactly 3 ideas, same format as elimination rounds (idea + reasoning), clearly marked as the conclusion — reasoning here can be a bit fuller since this is the final selection.
 
-Exakt 3 Ideen, im gleichen Format wie die Zwischenrunden (Idee + Begründung), aber deutlich als Abschluss gekennzeichnet — hier idealerweise etwas ausführlicher begründet, da dies die Endauswahl ist.
-
-## Output-Format
-
-Gliedere die Antwort klar nach Runden, damit der User jederzeit auf eine bestimmte Runde/Idee zurückverweisen kann:
+## Output format
 
 ```
-## Rundenplan: N → ... → 3
+## Round plan: N → ... → 3
 
-## Runde 1: Exploration (N Ideen)
-1. **[Idee]** — Richtung: [Gegenrichtung/Kreativ-quer/Zielrichtung] — Ansatz: [...]
+## Round 1: Exploration (N ideas)
+1. **[Idea]** — Direction: [Counter-direction/Creative-lateral/Goal-direction] — Approach: [...]
 2. ...
 
-## Runde 2: Zwischenrunde ([Anzahl] Ideen)
-1. **[Idee]** — Richtung: [ursprüngliche Richtung] — Begründung: [...]
+## Round 2: Elimination ([count] ideas)
+1. **[Idea]** — Direction: [original direction] — Reasoning: [...]
 2. ...
 
-[weitere Zwischenrunden falls vorhanden]
+[additional elimination rounds if any]
 
-## Finalrunde (3 Ideen)
-1. **[Idee]** — Richtung: [ursprüngliche Richtung] — Begründung: [...]
+## Final round (3 ideas)
+1. **[Idea]** — Direction: [original direction] — Reasoning: [...]
 2. ...
 3. ...
 ```
 
-Nach der Finalrunde kurz anbieten, dass der User einzelne Ideen aus früheren Runden nachträglich kombinieren oder wiederbeleben kann.
+After the final round, briefly offer that the user can combine or revive ideas from earlier rounds.
