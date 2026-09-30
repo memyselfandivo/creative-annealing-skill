@@ -1,6 +1,6 @@
 # Creative Annealing
 
-An AI skill for Claude that structures creative ideation as a multi-round process inspired by simulated annealing: a wide, high-temperature exploration phase first, followed by staged elimination rounds — cooling down step by step — to exactly three final ideas, with the reasoning behind every survival tracked along the way.
+An AI skill that structures creative ideation as a multi-round process inspired by simulated annealing: a wide, high-temperature exploration phase first, followed by staged elimination rounds — cooling down step by step — to exactly three final ideas, with the reasoning behind every survival tracked along the way.
 
 ## Why
 
